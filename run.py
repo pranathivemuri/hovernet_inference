@@ -180,6 +180,8 @@ class InferROI(object):
         for filename in file_list:
             filename = os.path.basename(filename)
             basename = os.path.splitext(filename)[0]
+            format_file = basename.split(".")[-1]
+            basename_wo_format = basename.replace("." + basename.split(".")[-1], "")
             print(self.input_dir, basename, end=' ', flush=True)
             print(filename)
 
@@ -191,7 +193,7 @@ class InferROI(object):
             pred_map = self.__gen_prediction(img, self.predictor)
 
             pred_inst, pred_type = proc_utils.process_instance(pred_map, nr_types=self.nr_types)
-            
+
             overlaid_output = visualize_instances(img, pred_inst, pred_type)
             overlaid_output = cv2.cvtColor(overlaid_output, cv2.COLOR_BGR2RGB)
 
@@ -202,6 +204,10 @@ class InferROI(object):
 
             cv2.imwrite('%s/%s.png' % (save_dir, basename), overlaid_output)
             np.save('%s/%s.npy' % (save_dir, basename), pred)
+            binary = pred[:, :, 0]
+            binary[binary != 0] = 255
+            binary_output = binary.astype(np.uint8)
+            cv2.imwrite('%s/%s.%s' % (save_dir, basename_wo_format + "_Binary", format_file), binary_output)
 ####
 
 class InferWSI(object):
