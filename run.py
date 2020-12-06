@@ -181,10 +181,10 @@ class InferROI(object):
         for filename in file_list:
             filename = os.path.basename(filename)
             basename = os.path.splitext(filename)[0]
-            format_file = basename.split(".")[-1]
-            basename_wo_format = basename.replace("." + basename.split(".")[-1], "")
+            format_file = filename.split(".")[-1]
+            basename_wo_format = filename.replace("." + format_file, "")
             print(self.input_dir, basename, end=' ', flush=True)
-            print(filename)
+            print(format_file, basename_wo_format, filename)
 
             ###
             img = cv2.imread(self.input_dir + '/' + filename)
@@ -208,6 +208,7 @@ class InferROI(object):
             binary = pred[:, :, 0]
             binary[binary != 0] = 255
             binary_output = binary.astype(np.uint8)
+            print("Saving to {}".format(save_dir, basename_wo_format + "_Binary", format_file))
             imsave('%s/%s.%s' % (save_dir, basename_wo_format + "_Binary", format_file), binary_output)
 ####
 
