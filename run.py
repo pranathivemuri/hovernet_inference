@@ -37,6 +37,7 @@ from tensorpack.tfutils.sessinit import get_model_loader
 from tensorpack import logger
 logger._getlogger().disabled = True # disable logging of network info
 
+from skimage.io import imsave
 from hover.misc.utils import rm_n_mkdir
 from hover.misc.viz_utils import visualize_instances
 import hover.postproc.process_utils as proc_utils
@@ -207,7 +208,7 @@ class InferROI(object):
             binary = pred[:, :, 0]
             binary[binary != 0] = 255
             binary_output = binary.astype(np.uint8)
-            cv2.imwrite('%s/%s.%s' % (save_dir, basename_wo_format + "_Binary", format_file), binary_output)
+            imsave('%s/%s.%s' % (save_dir, basename_wo_format + "_Binary", format_file), binary_output)
 ####
 
 class InferWSI(object):
