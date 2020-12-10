@@ -208,8 +208,8 @@ class InferROI(object):
             binary = pred[:, :, 0]
             binary[binary != 0] = 255
             binary_output = binary.astype(np.uint8)
-            print("Saving to {}".format(os.path.join(save_dir, "binary"), basename_wo_format + "_Binary", format_file))
-            imsave('%s/%s.%s' % (os.path.join(save_dir, "binary"), basename_wo_format + "_Binary", format_file), binary_output)
+            print("Saving to {}".format(save_dir, basename_wo_format + "_Binary", format_file))
+            imsave('%s/%s.%s' % (save_dir, basename_wo_format + "_Binary", format_file), binary_output)
 ####
 
 class InferWSI(object):
