@@ -251,8 +251,8 @@ class InferTile(object):
 
             cv2.imwrite("%s/%s/overlay.png" % (save_dir, basename), overlaid_output)
             np.save("%s/%s/instances.npy" % (save_dir, basename), pred_inst)
-            binary = pred_inst[:, :, 0]
-            binary[binary != 0] = 255
+            binary = np.zeros_like(pred_inst)
+            binary[pred_inst != 0] = 255
             binary_output = binary.astype(np.uint8)
             print("Saving to {}".format(save_dir, basename_wo_format + "_Binary", format_file))
             imsave('%s/%s.%s' % (save_dir, basename_wo_format + "_Binary", format_file), binary_output)
