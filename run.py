@@ -34,7 +34,7 @@ import json
 import importlib
 from collections import deque
 from multiprocessing import Pool
-
+from skimage.io import imsave
 import cv2
 import numpy as np
 import tqdm
@@ -48,7 +48,7 @@ logger._getlogger().disabled = True  # disable logging of network info
 
 from hover.postproc.process_utils import process
 from hover.misc.wsi_handler import get_wsi_handler
-from hover.misc.utils import rm_n_mkdir, visualize_instances, get_tissue_mask
+from hover.misc.utils import rm_n_mkdir, visualize_instances, get_tissue_mask, color_instances
 from hover.misc.run_utils import (
     remove_inst,
     assemble_and_flush,
@@ -229,6 +229,10 @@ class InferTile(object):
         for filename in file_list:
             filename = os.path.basename(filename)
             basename = os.path.splitext(filename)[0]
+            format_file = filename.split(".")[-1]
+            basename_wo_format = filename.replace("." + format_file, "")
+            print(self.input_dir, basename, end=' ', flush=True)
+            print(format_file, basename_wo_format, filename)
 
             rm_n_mkdir(save_dir + '/' + basename)
 
@@ -247,7 +251,14 @@ class InferTile(object):
 
             cv2.imwrite("%s/%s/overlay.png" % (save_dir, basename), overlaid_output)
             np.save("%s/%s/instances.npy" % (save_dir, basename), pred_inst)
-
+            binary = np.zeros_like(pred_inst)
+            binary[pred_inst != 0] = 255
+            binary_output = binary.astype(np.uint8)
+            colored_instances = color_instances(img, pred_info, self.model_name)
+            print("Saving to {}".format(save_dir, basename_wo_format + "_Binary", format_file))
+            print("Saving to {}".format(save_dir, basename_wo_format + "_Instances", format_file))
+            imsave('%s/%s.%s' % (save_dir, basename_wo_format + "_Instances", format_file), colored_instances)
+            imsave('%s/%s.%s' % (save_dir, basename_wo_format + "_Binary", format_file), binary_output)
             # save result info as json file
             json_dict = {}
             for inst_id, inst_info in pred_info.items():
@@ -260,7 +271,7 @@ class InferTile(object):
                 json_dict[int(inst_id)] = new_inst_info
             with open("%s/%s/nuclei_dict.json" % (save_dir, basename), "w") as handle:
                 json.dump(json_dict, handle)
-            
+
             pbar.update()
         pbar.close()
 
