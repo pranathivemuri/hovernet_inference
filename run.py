@@ -251,6 +251,9 @@ class InferTile(object):
         binary = np.zeros_like(pred_inst)
         binary[pred_inst != 0] = 255
         binary_output = binary.astype(np.uint8)
+        format_file = filename.split(".")[-1]
+        basename_wo_format = filename.replace("." + format_file, "")
+        save_dir = self.output_dir
         print("Saving to {}".format(save_dir, basename_wo_format + "_Binary", format_file))
         imsave('%s/%s.%s' % (save_dir, basename_wo_format + "_Binary", format_file), binary_output)
 
@@ -818,8 +821,18 @@ class InferWSI(object):
         ) as handle:
             json.dump(json_dict, handle)
 
+        binary = np.zeros_like(self.wsi_inst_map)
+        binary[self.wsi_inst_map != 0] = 255
+        binary_output = binary.astype(np.uint8)
+        format_file = filename.split(".")[-1]
+        basename_wo_format = filename.replace("." + format_file, "")
+        save_dir = self.output_dir
+        print("Saving to {}".format(save_dir, basename_wo_format + "_Binary", format_file))
+        imsave('%s/%s.%s' % (save_dir, basename_wo_format + "_Binary", format_file), binary_output)
+
         end = time.perf_counter()
         print("Post Proc Time:", round(end-start), 'secs')
+        return binary_output
 
     def load_model(self):
         """Loads the model and checkpoints"""
