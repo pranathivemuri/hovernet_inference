@@ -41,6 +41,8 @@ import tqdm
 
 from tensorpack.predict import OfflinePredictor, PredictConfig
 from tensorpack.tfutils.sessinit import get_model_loader
+from tensorpack.tfutils.export import ModelExporter
+
 
 from tensorpack import logger
 
@@ -168,6 +170,85 @@ class InferTile(object):
             batch_output = predictor(sub_patches)[0]
             batch_output = np.split(batch_output, len(sub_patches), axis=0)
             pred_list.extend(batch_output)
+
+        output_patch_shape = np.squeeze(pred_list[0]).shape
+        ch = 1 if len(output_patch_shape) == 2 else output_patch_shape[-1]
+
+        # Assemble back into full image
+        pred_map = np.squeeze(np.array(pred_list))
+        pred_map = np.reshape(pred_map, (nr_step_h, nr_step_w) + pred_map.shape[1:])
+        pred_map = (
+            np.transpose(pred_map, [0, 2, 1, 3, 4])
+            if ch != 1
+            else np.transpose(pred_map, [0, 2, 1, 3])
+        )
+        pred_map = np.reshape(
+            pred_map,
+            (
+                pred_map.shape[0] * pred_map.shape[1],
+                pred_map.shape[2] * pred_map.shape[3],
+                ch,
+            ),
+        )
+        pred_map = np.squeeze(pred_map[:im_h, :im_w])  # just crop back to original size
+
+        return pred_map
+
+    def apply_compact(self, graph_path):
+        """Run the pruned and frozen inference graph. """
+
+        step_size = self.patch_output_shape
+        msk_size = self.patch_output_shape
+        win_size = self.patch_input_shape
+
+        def get_last_steps(length, msk_size, step_size):
+            nr_step = math.ceil((length - msk_size) / step_size)
+            last_step = (nr_step + 1) * step_size
+            return int(last_step), int(nr_step + 1)
+
+        im_h = tile.shape[0]
+        im_w = tile.shape[1]
+
+        last_h, nr_step_h = get_last_steps(im_h, msk_size[0], step_size[0])
+        last_w, nr_step_w = get_last_steps(im_w, msk_size[1], step_size[1])
+
+        diff_h = win_size[0] - step_size[0]
+        padt = diff_h // 2
+        padb = last_h + win_size[0] - im_h
+
+        diff_w = win_size[1] - step_size[1]
+        padl = diff_w // 2
+        padr = last_w + win_size[1] - im_w
+
+        tile = np.lib.pad(tile, ((padt, padb), (padl, padr), (0, 0)), "reflect")
+
+        sub_patches = []
+        # generating subpatches from orginal
+        for row in range(0, last_h, step_size[0]):
+            for col in range(0, last_w, step_size[1]):
+                win = tile[row : row + win_size[0], col : col + win_size[1]]
+                sub_patches.append(win)
+
+        pred_list = deque()
+        with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
+            # Note, we just load the graph and do *not* need to initialize anything.
+            with tf.gfile.GFile(graph_path, "rb") as f:
+                graph_def = tf.GraphDef()
+                graph_def.ParseFromString(f.read())
+                tf.import_graph_def(graph_def)
+                while len(sub_patches) > self.batch_size:
+                    mini_batch = sub_patches[: self.batch_size]
+                    sub_patches = sub_patches[self.batch_size :]
+                    batch_output = sess.run(prediction_img, {input_img: mini_batch})
+                    batch_output = np.split(batch_output, self.batch_size, axis=0)
+                    pred_list.extend(batch_output)
+                if len(sub_patches) != 0:
+                    input_img = sess.graph.get_tensor_by_name('import/images:0')
+                    prediction_img = sess.graph.get_tensor_by_name('import/predmap-coded:0')
+
+                    batch_output = sess.run(prediction_img, {input_img: sub_patches})
+                    batch_output = np.split(batch_output, len(sub_patches), axis=0)
+                    pred_list.extend(batch_output)
 
         output_patch_shape = np.squeeze(pred_list[0]).shape
         ch = 1 if len(output_patch_shape) == 2 else output_patch_shape[-1]
@@ -851,6 +932,25 @@ class InferWSI(object):
             output_names=self.output_tensor_names,
         )
         self.predictor = OfflinePredictor(pred_config)
+
+    def export_compact(self):
+        """Export trained model to use it as a frozen and pruned inference graph in
+           mobile applications. """
+        model_path = self.model_path
+        model_constructor = self.get_model()
+        pred_config = PredictConfig(
+            model=model_constructor(
+                self.nr_types,
+                self.patch_input_shape,
+                self.patch_output_shape,
+                self.input_norm,
+            ),
+            session_init=get_model_loader(model_path),
+            input_names=self.input_tensor_names,
+            output_names=self.output_tensor_names,
+        )
+        ModelExporter(pred_config).export_compact(
+            os.path.join(os.path.dirname(model_path), 'compact_graph.pb'))
 
     def load_filenames(self):
         """Get the list of all WSI files to process"""
