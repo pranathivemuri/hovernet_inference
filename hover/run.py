@@ -332,7 +332,7 @@ class InferWSI(object):
 
     """
     def __init__(self):
-        self.nr_types = None
+        self.nr_types = 6
         self.patch_input_shape = [256, 256]
         self.patch_output_shape = [164, 164]
         self.input_norm = True  
