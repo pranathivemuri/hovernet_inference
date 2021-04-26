@@ -6,8 +6,6 @@ from tensorpack import *
 from tensorpack.tfutils.symbolic_functions import *
 from tensorpack.tfutils.summary import *
 
-from matplotlib import cm
-
 
 def resize_op(
     x,
