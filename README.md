@@ -6,7 +6,7 @@ HoVer-Net Tile and WSI processing code for simultaneous nuclear segmentation and
 
 **NEWS:** Our model achieved the best performance in the [MoNuSAC challenge](https://monusac-2020.grand-challenge.org/).  <br />
 
-If you require the model to be trained, refer to the [original repository](https://github.com/vqdang/hover_net).  <br />
+We will now be primarily supporting the PyTorch version of this code, which also enables model training. For more information please refer to [this repository](https://github.com/vqdang/hover_net).  <br />
 
 
 ## Set up envrionment
@@ -21,7 +21,7 @@ Glymur requires OpenJPEG as a dependency. If this is not installed, use `conda i
 
 ## Running the code
 
-Before running the code, download the HoVer-Net weights [here](https://drive.google.com/drive/folders/1OhKlymBmXFEU5oTfLl2E-CiZKnsOZtCS?usp=sharing). There are two checkpoint files that are available to use: `pannuke.npz` and `monusac.npz`, which correspond to the dataset that they were trained on. See below for licensing details. 
+Before running the code, download the HoVer-Net weights [here](https://drive.google.com/drive/folders/1NwnF71vuhMB3QeV9R5CFDyYFBGaexf_f?usp=sharing). There are two checkpoint files that are available to use: `pannuke.npz` and `monusac.npz`, which correspond to the dataset that they were trained on. See below for licensing details. 
 
 Usage:
 ```
