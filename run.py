@@ -227,56 +227,53 @@ class InferTile(object):
                          ncols=80, ascii=True, position=0)
 
         for filename in file_list:
-            self.process_file(filename)
+            filename = os.path.basename(filename)
+            basename = os.path.splitext(filename)[0]
+            format_file = filename.split(".")[-1]
+            basename_wo_format = filename.replace("." + format_file, "")
+            print(self.input_dir, basename, end=' ', flush=True)
+            print(format_file, basename_wo_format, filename)
+
+            rm_n_mkdir(save_dir + '/' + basename)
+
+            ###
+            img = cv2.imread(self.input_dir + "/" + filename)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+            ###
+            pred_map = self.__gen_prediction(img, self.predictor)
+
+            pred_inst, pred_info = process(
+                pred_map, nr_types=self.nr_types, return_dict=True, return_probs=self.return_probs)
+
+            overlaid_output = visualize_instances(img, pred_info, self.model_name)
+            overlaid_output = cv2.cvtColor(overlaid_output, cv2.COLOR_BGR2RGB)
+
+            cv2.imwrite("%s/%s/overlay.png" % (save_dir, basename), overlaid_output)
+            np.save("%s/%s/instances.npy" % (save_dir, basename), pred_inst)
+            binary = np.zeros_like(pred_inst)
+            binary[pred_inst != 0] = 255
+            binary_output = binary.astype(np.uint8)
+            colored_instances = color_instances(img, pred_info, self.model_name)
+            print("Saving to {}".format(save_dir, basename_wo_format + "_Binary", format_file))
+            print("Saving to {}".format(save_dir, basename_wo_format + "_Instances", format_file))
+            imsave('%s/%s.%s' % (save_dir, basename_wo_format + "_Instances", format_file), colored_instances)
+            imsave('%s/%s.%s' % (save_dir, basename_wo_format + "_Binary", format_file), binary_output)
+            # save result info as json file
+            json_dict = {}
+            for inst_id, inst_info in pred_info.items():
+                new_inst_info = {}
+                for info_name, info_value in inst_info.items():
+                    # convert to JSON
+                    if isinstance(info_value, np.ndarray):
+                        info_value = info_value.tolist()
+                    new_inst_info[info_name] = info_value
+                json_dict[int(inst_id)] = new_inst_info
+            with open("%s/%s/nuclei_dict.json" % (save_dir, basename), "w") as handle:
+                json.dump(json_dict, handle)
 
             pbar.update()
         pbar.close()
-
-    def process_file(self, filename):
-        filename = os.path.basename(filename)
-        basename = os.path.splitext(filename)[0]
-        format_file = filename.split(".")[-1]
-        basename_wo_format = filename.replace("." + format_file, "")
-        print(self.input_dir, basename, end=' ', flush=True)
-        print(format_file, basename_wo_format, filename)
-
-        rm_n_mkdir(save_dir + '/' + basename)
-
-        ###
-        img = cv2.imread(self.input_dir + "/" + filename)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-        ###
-        pred_map = self.__gen_prediction(img, self.predictor)
-
-        pred_inst, pred_info = process(
-            pred_map, nr_types=self.nr_types, return_dict=True, return_probs=self.return_probs)
-
-        overlaid_output = visualize_instances(img, pred_info, self.model_name)
-        overlaid_output = cv2.cvtColor(overlaid_output, cv2.COLOR_BGR2RGB)
-
-        cv2.imwrite("%s/%s/overlay.png" % (save_dir, basename), overlaid_output)
-        np.save("%s/%s/instances.npy" % (save_dir, basename), pred_inst)
-        binary = np.zeros_like(pred_inst)
-        binary[pred_inst != 0] = 255
-        binary_output = binary.astype(np.uint8)
-        colored_instances = color_instances(img, pred_info, self.model_name)
-        print("Saving to {}".format(save_dir, basename_wo_format + "_Binary", format_file))
-        print("Saving to {}".format(save_dir, basename_wo_format + "_Instances", format_file))
-        imsave('%s/%s.%s' % (save_dir, basename_wo_format + "_Instances", format_file), colored_instances)
-        imsave('%s/%s.%s' % (save_dir, basename_wo_format + "_Binary", format_file), binary_output)
-        # save result info as json file
-        json_dict = {}
-        for inst_id, inst_info in pred_info.items():
-            new_inst_info = {}
-            for info_name, info_value in inst_info.items():
-                # convert to JSON
-                if isinstance(info_value, np.ndarray):
-                    info_value = info_value.tolist()
-                new_inst_info[info_name] = info_value
-            json_dict[int(inst_id)] = new_inst_info
-        with open("%s/%s/nuclei_dict.json" % (save_dir, basename), "w") as handle:
-            json.dump(json_dict, handle)
 
 
 class InferWSI(object):
@@ -871,7 +868,7 @@ if __name__ == "__main__":
         infer._parse_args(args)
         infer.load_model()
         infer.process_all_files()
-    elif args["--mode"] == "wsi":
+    elif args["--mode"] == "wsi":  
         infer = InferWSI()
         infer._parse_args(args)
         infer.load_model()
