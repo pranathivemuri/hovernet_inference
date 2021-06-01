@@ -34,7 +34,7 @@ import json
 import importlib
 from collections import deque
 from multiprocessing import Pool
-from skimage.io import imsave
+
 import cv2
 import numpy as np
 import tqdm
@@ -48,7 +48,7 @@ logger._getlogger().disabled = True  # disable logging of network info
 
 from hover.postproc.process_utils import process
 from hover.misc.wsi_handler import get_wsi_handler
-from hover.misc.utils import rm_n_mkdir, visualize_instances, get_tissue_mask, color_instances
+from hover.misc.utils import rm_n_mkdir, visualize_instances, get_tissue_mask
 from hover.misc.run_utils import (
     remove_inst,
     assemble_and_flush,
@@ -254,10 +254,7 @@ class InferTile(object):
             binary = np.zeros_like(pred_inst)
             binary[pred_inst != 0] = 255
             binary_output = binary.astype(np.uint8)
-            colored_instances = color_instances(img, pred_info, self.model_name)
             print("Saving to {}".format(save_dir, basename_wo_format + "_Binary", format_file))
-            print("Saving to {}".format(save_dir, basename_wo_format + "_Instances", format_file))
-            imsave('%s/%s.%s' % (save_dir, basename_wo_format + "_Instances", format_file), colored_instances)
             imsave('%s/%s.%s' % (save_dir, basename_wo_format + "_Binary", format_file), binary_output)
             # save result info as json file
             json_dict = {}

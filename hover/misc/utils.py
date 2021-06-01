@@ -102,34 +102,6 @@ def visualize_instances(input_image, inst_dict, model_name, line_thickness=2):
     return overlay
 
 
-def color_instances(input_image, inst_dict, model_name, line_thickness=2):
-    """Generate overlay of results on top of original image
-
-    Args:
-        input_image (ndarray): original input image
-        inst_dict (dict): dictionary of instance level results
-        model_name: either pannuke or monusac - determines overlay colours
-        line_thickness: thickness of line used in overlay
-    
-    Return:
-        overlay (ndarray): generated overlay
-
-    """
-    colored_instance_image = np.zeros((input_image.shape)).astype(np.uint8)
-
-    colour_dict = type_colour(model_name) # get dictionary of RGB colours for each class
-
-    for idx, [inst_id, inst_info] in enumerate(inst_dict.items()):
-        inst_contour = inst_info["contour"]
-        if "type" in inst_info and type_colour is not None:
-            inst_colour = colour_dict[inst_info["type"]]
-        else:
-            inst_colour = (255, 255, 0)
-        cv2.drawContours(colored_instance_image, [inst_contour], -1, inst_colour, line_thickness)
-
-    return colored_instance_image
-
-
 def stain_entropy_otsu(img):
     """Generate tissue mask using otsu thresholding and entropy calculation
 
