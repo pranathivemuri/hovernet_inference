@@ -31,7 +31,7 @@ setup(
     long_description=read("README.md"),
     long_description_content_type="text/markdown",
     packages=find_packages(exclude=["tests.*", "tests", "data"]),
-    python_requires="==3.6.13",
+    python_requires="==3.6",
     install_requires=requirements,
     classifiers=[
         "Development Status :: 4 - Beta",
