@@ -44,6 +44,12 @@ from tensorpack.tfutils.sessinit import get_model_loader
 
 from tensorpack import logger
 
+<<<<<<< HEAD
+from skimage.io import imsave
+from hover.misc.utils import rm_n_mkdir
+from hover.misc.viz_utils import visualize_instances
+import hover.postproc.process_utils as proc_utils
+=======
 logger._getlogger().disabled = True  # disable logging of network info
 
 from hover.postproc.process_utils import process
@@ -56,6 +62,7 @@ from hover.misc.run_utils import (
     get_tile_patch_info,
     post_proc_para_wrapper
 )
+>>>>>>> upstream/master
 
 import time
 
@@ -229,12 +236,15 @@ class InferTile(object):
         for filename in file_list:
             filename = os.path.basename(filename)
             basename = os.path.splitext(filename)[0]
+<<<<<<< HEAD
             format_file = filename.split(".")[-1]
             basename_wo_format = filename.replace("." + format_file, "")
             print(self.input_dir, basename, end=' ', flush=True)
             print(format_file, basename_wo_format, filename)
+=======
 
             rm_n_mkdir(save_dir + '/' + basename)
+>>>>>>> upstream/master
 
             ###
             img = cv2.imread(self.input_dir + "/" + filename)
@@ -243,19 +253,21 @@ class InferTile(object):
             ###
             pred_map = self.__gen_prediction(img, self.predictor)
 
+<<<<<<< HEAD
+            pred_inst, pred_type = proc_utils.process_instance(pred_map, nr_types=self.nr_types)
+
+            overlaid_output = visualize_instances(img, pred_inst, pred_type)
+=======
             pred_inst, pred_info = process(
                 pred_map, nr_types=self.nr_types, return_dict=True, return_probs=self.return_probs)
 
             overlaid_output = visualize_instances(img, pred_info, self.model_name)
+>>>>>>> upstream/master
             overlaid_output = cv2.cvtColor(overlaid_output, cv2.COLOR_BGR2RGB)
 
             cv2.imwrite("%s/%s/overlay.png" % (save_dir, basename), overlaid_output)
             np.save("%s/%s/instances.npy" % (save_dir, basename), pred_inst)
-            binary = pred_inst[:, :, 0]
-            binary[binary != 0] = 255
-            binary_output = binary.astype(np.uint8)
-            print("Saving to {}".format(save_dir, basename_wo_format + "_Binary", format_file))
-            imsave('%s/%s.%s' % (save_dir, basename_wo_format + "_Binary", format_file), binary_output)
+
             # save result info as json file
             json_dict = {}
             for inst_id, inst_info in pred_info.items():
@@ -268,10 +280,21 @@ class InferTile(object):
                 json_dict[int(inst_id)] = new_inst_info
             with open("%s/%s/nuclei_dict.json" % (save_dir, basename), "w") as handle:
                 json.dump(json_dict, handle)
-
+            
             pbar.update()
         pbar.close()
 
+<<<<<<< HEAD
+            cv2.imwrite('%s/%s.png' % (save_dir, basename), overlaid_output)
+            np.save('%s/%s.npy' % (save_dir, basename), pred)
+            binary = pred[:, :, 0]
+            binary[binary != 0] = 255
+            binary_output = binary.astype(np.uint8)
+            print("Saving to {}".format(save_dir, basename_wo_format + "_Binary", format_file))
+            imsave('%s/%s.%s' % (save_dir, basename_wo_format + "_Binary", format_file), binary_output)
+####
+=======
+>>>>>>> upstream/master
 
 class InferWSI(object):
     """WSI inference class
