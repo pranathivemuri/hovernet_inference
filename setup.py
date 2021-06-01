@@ -33,6 +33,7 @@ setup(
     packages=find_packages(exclude=["tests.*", "tests", "data"]),
     python_requires=">=3.7",
     install_requires=requirements,
+    setup_requires=["setuptools_scm"],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
