@@ -232,30 +232,6 @@ class InferTile(object):
             pbar.update()
         pbar.close()
 
-    def convert_to_binary(self, filename):
-        filename = os.path.basename(filename)
-        basename = os.path.splitext(filename)[0]
-        format_file = filename.split(".")[-1]
-        basename_wo_format = filename.replace("." + format_file, "")
-        print(format_file, basename_wo_format, filename)
-
-        ###
-        img = cv2.imread(self.input_dir + "/" + filename)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-        ###
-        pred_map = self.__gen_prediction(img, self.predictor)
-
-        pred_inst, pred_info = process(
-            pred_map, nr_types=self.nr_types, return_dict=True, return_probs=self.return_probs)
-        binary = np.zeros_like(pred_inst)
-        binary[pred_inst != 0] = 255
-        binary_output = binary.astype(np.uint8)
-        print("Saving to {}".format(save_dir, basename_wo_format + "_Binary", format_file))
-        imsave('%s/%s.%s' % (save_dir, basename_wo_format + "_Binary", format_file), binary_output)
-
-        return binary_output
-
     def process_file(self, filename):
         filename = os.path.basename(filename)
         basename = os.path.splitext(filename)[0]
